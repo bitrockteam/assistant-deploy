@@ -25,7 +25,7 @@ app.intent('lancia_deploy', (conv, {repo}) => {
   let slug = '';
   
   const getOptions = {
-    uri: 'https://api.travis-ci.org/owner/mbertozzo/repos',
+    uri: 'https://api.travis-ci.org/owner/bitrockteam/repos',
     headers: {
       'Travis-API-Version': '3',
       'Authorization': 'token ' + process.env.TRAVIS
