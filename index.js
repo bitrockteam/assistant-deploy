@@ -20,18 +20,22 @@ const { dialogflow } = require('actions-on-google');
  */
 const app = dialogflow({debug: true});
 
-/**
- * Handle the Dialogflow intent named 'start_build'.
- * This intent is triggered when users give the command
- * to start the building process
- */
-app.intent('start_build', (conv) => {
-  var date = new Date();
-  var currTime = date.getHours() + ':' + date.getMinutes();
+app.intent('lancia_deploy', (conv, {repo}) => {
+  const repoStr = repo.replace(/\s+/g, '-').toLowerCase() || '';
+  let slug = '';
+  
+  const getOptions = {
+    uri: 'https://api.travis-ci.org/owner/mbertozzo/repos',
+    headers: {
+      'Travis-API-Version': '3',
+      'Authorization': 'token ' + process.env.TRAVIS
+    },
+    json: true
+  };
 
-  var options = {
+  let postOptions = {
     method: 'POST',
-    url: 'https://api.travis-ci.org/repo/bitrockteam%2Fsignature/requests',
+    url: '',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -40,18 +44,34 @@ app.intent('start_build', (conv) => {
     },
     body: JSON.stringify({
       "request": {
-        "message": "Request sent from GA " + currTime,
+        "message": "Request sent from GA",
         "branch": "master"
       }
     })
   };
-  
-  conv.ask('So let\'s begin. The building process for your project will start in seconds!');
 
-  return request(options)
-  .then(() => {return conv.close('All set! Travis has been correctly notified.')});
-  
- });
+  return request(getOptions)
+  .then((r) => r.repositories)
+  .then((r) => {
+    const match = r.find(data => data.name === repoStr);
+    return slug = match.slug;
+  })
+  .then((r) => conv.ask('Inizio il processo di deploy per ' + slug))
+  .then((r) => {
+    const postSlug = slug.replace('/','%2F');
+    postOptions.url = `https://api.travis-ci.org/repo/${postSlug}/requests`;
+
+    //return conv.ask('Il link POST è ' + postOptions.url);
+  })
+  .then((r) => {
+    return request(postOptions)
+      .then(() => {return conv.close('Travis è stato notificato con successo. Le operazioni inizieranno a momenti!')});
+  });
+
+
+
+}); //app.intent
+
 
 /**
  * Server setup
