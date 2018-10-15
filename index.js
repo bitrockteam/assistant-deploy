@@ -20,12 +20,17 @@ const { dialogflow } = require('actions-on-google');
  */
 const app = dialogflow({debug: true});
 
+/**
+ * Webhook fired by "lancia_deploy" intent. 
+ * Looks for the requested repo and triggers the deploy.
+ * @param {string} repo - Repository name from Dialogflow NLP
+ */
 app.intent('lancia_deploy', (conv, {repo}) => {
   const repoStr = repo.replace(/\s+/g, '-').toLowerCase() || '';
   let slug = '';
   
   const getOptions = {
-    uri: 'https://api.travis-ci.org/owner/bitrockteam/repos',
+    uri: `https://api.travis-ci.org/owner/${process.env.USER}/repos`,
     headers: {
       'Travis-API-Version': '3',
       'Authorization': 'token ' + process.env.TRAVIS
@@ -51,27 +56,19 @@ app.intent('lancia_deploy', (conv, {repo}) => {
   };
 
   return request(getOptions)
-  .then((r) => r.repositories)
-  .then((r) => {
-    const match = r.find(data => data.name === repoStr);
-    return slug = match.slug;
-  })
-  .then((r) => conv.ask('Inizio il processo di deploy per ' + slug))
-  .then((r) => {
-    const postSlug = slug.replace('/','%2F');
-    postOptions.url = `https://api.travis-ci.org/repo/${postSlug}/requests`;
-
-    //return conv.ask('Il link POST è ' + postOptions.url);
-  })
-  .then((r) => {
-    return request(postOptions)
-      .then(() => {return conv.close('Travis è stato notificato con successo. Le operazioni inizieranno a momenti!')});
-  });
-
-
-
-}); //app.intent
-
+    .then((r) => r.repositories)
+    .then((r) => {
+      const match = r.find(data => data.name === repoStr);
+      return slug = match.slug;
+    })
+    .then((r) => conv.ask('Inizio il processo di deploy per ' + slug))
+    .then((r) => {
+      const postSlug = slug.replace('/','%2F');
+      postOptions.url = `https://api.travis-ci.org/repo/${postSlug}/requests`;
+    })
+    .then((r) => request(postOptions))
+    .then(() => conv.close('Travis è stato notificato con successo. Le operazioni inizieranno a momenti!'));
+});
 
 /**
  * Server setup
