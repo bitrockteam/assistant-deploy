@@ -5,7 +5,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "demo": "node demo.js > ./dist/index.html"
   },
   "dependencies": {
     "actions-on-google": "^2.4.1",
