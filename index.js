@@ -3,6 +3,9 @@
 const dotenv = require('dotenv');
 dotenv.config();
 
+const PORT = process.env.NODE_ENV === 'production' ? 
+  process.env.PORT : 3000;
+
 /**
  * Import the module to perform HTTP calls with
  * Promise support
@@ -86,4 +89,4 @@ server.get('/', function(req,res){
 
 server.post('/hook', app);
 
-server.listen(3000, () => console.log('Server listening on port 3000.'))
+server.listen(PORT, () => console.log('Server listening on port 3000.'))
